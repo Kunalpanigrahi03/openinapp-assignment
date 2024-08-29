@@ -9,7 +9,12 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      placeholderColor: {
+        white: '#ffffff',
+        black: '#000000',
+      },
+    },
     fontFamily: {
       lato: ["Lato", "sans-serif"],
     },

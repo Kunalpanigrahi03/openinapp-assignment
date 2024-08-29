@@ -1,179 +1,219 @@
 import React, { useEffect, useState } from "react";
+import Papa from 'papaparse';
+import { Bell, User, X } from 'lucide-react';
 import SideBar from "../components/SideBar";
-import Card from "../components/Card";
-import Chart from "../components/Chart";
-import Header from "../components/Header";
 import { Navigate } from "react-router-dom";
-import ProfileDetails from "../components/ProfileDetails";
-import chart from "../assets/chart.svg";
-import down from "../assets/downarrow.png";
-import whatsapp from "../assets/whatsapp.png";
-import instaPic from "../assets/insta.png";
-import emailPic from "../assets/email.png";
-import yt from "../assets/yt.png";
-import plus from "../assets/plus.svg";
 
 const Home = () => {
-  const [authenticated, setauthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
   const [check, setCheck] = useState(true);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [user, setUser] = useState({});
   const [detailsExist, setDetailsExist] = useState(false);
   const [isBasicSelected, setIsBasicSelected] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const openProfileModal = async () => {
-    setIsBasicSelected(true);
-    setIsPopupOpen(true);
-  };
+  const [file, setFile] = useState(null);
+  const [csvData, setCSVData] = useState([]);
+  const [isUploaded, setIsUploaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const loggedInUser = localStorage.getItem("authenticated");
     if (loggedInUser) {
-      setauthenticated(true);
+      setAuthenticated(true);
     }
     setCheck(false);
+
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === "dark");
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
+  };
+
+  const handleFileUpload = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
+  const handleUpload = () => {
+    if (file) {
+      setIsLoading(true);
+      Papa.parse(file, {
+        complete: (result) => {
+          setCSVData(result.data.map(row => ({
+            ...row,
+            selectedTags: []
+          })));
+          setIsUploaded(true);
+          setIsLoading(false);
+        },
+        header: true,
+      });
+    }
+  };
+
+  const handleTagSelect = (index, tag) => {
+    setCSVData(prevData => prevData.map((row, i) => 
+      i === index
+        ? { ...row, selectedTags: [...new Set([...row.selectedTags, tag])] }
+        : row
+    ));
+  };
+
+  const handleTagRemove = (index, tag) => {
+    setCSVData(prevData => prevData.map((row, i) => 
+      i === index
+        ? { ...row, selectedTags: row.selectedTags.filter(t => t !== tag) }
+        : row
+    ));
+  };
+
+  const getThemeClass = (lightClass, darkClass) => isDarkMode ? darkClass : lightClass;
+  const formatLink = (link) => {
+    if (!link.startsWith('http://') && !link.startsWith('https://')) {
+      return `http://${link}`;
+    }
+    return link;
+  };
 
   if (!authenticated && !check) {
     return <Navigate replace to="/" />;
-  } else {
-    return (
-      <>
-        <div
-          className={`relative flex flex-col w-full sm:flex-row justify-between gap-4 lg:gap-6 px-2 sm:px-4 py-4 bg-[#F5F5F5] ${
-            isPopupOpen ? "opacity-70" : ""
-          }`}
-        >
-          <SideBar />
-          <div className="flex flex-col justify-between w-full gap-2 md:gap-4">
-            <Header />
-            <Card />
-            <Chart />
+  }
 
-            {/* User Detail */}
-            <div className="flex flex-col lg:flex-row w-full gap-4 justify-center">
-              <div className="flex flex-col w-full lg:w-1/2 px-10 py-6 h-fit lg:px-15 lg:py-10 gap-6 justify-between text-black bg-white shadow-xl border-1 border-slate-200 rounded-3xl">
-                <div className="flex justify-between items-center">
-                  <h2 className="font-bold text-[18px]">Top products</h2>
-                  <p className="flex items-center gap-2 text-[14px] text-[#858585]">
-                    May-June 2021{" "}
-                    <img src={down} className="w-[8px] h-[5px]" alt="down" />
-                  </p>
-                </div>
-                <div className="flex justify-center items-center gap-6 md:gap-10 lg:gap-16">
-                  <img
-                    src={chart}
-                    className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] lg:w-[145px] lg:h-[145px]"
-                    alt="chart1"
-                  />
-                  <div className="flex flex-col justify-between">
-                    <div className="flex justify-start items-center gap-3">
-                      <div className="rounded-full w-[11px] h-[11px] bg-[#98D89E] mb-3" />
-                      <div className="flex flex-col justify-between">
-                        <h2 className="font-bold text-[12px] sm:text-[14px]">
-                          Basic Tees
-                        </h2>
-                        <p className="text-[#858585] text-[12px] font-lato">
-                          55%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-start items-center gap-3">
-                      <div className="rounded-full w-[11px] h-[11px] bg-[#F6DC7D] mb-3" />
-                      <div className="flex flex-col justify-between">
-                        <h2 className="font-bold text-[12px] sm:text-[14px]">
-                          Custom Short Pants
-                        </h2>
-                        <p className="text-[#858585] text-[12px] font-lato">
-                          31%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-start items-center gap-3">
-                      <div className="rounded-full w-[11px] h-[11px] bg-[#EE8484] mb-3" />
-                      <div className="flex flex-col justify-between">
-                        <h2 className="font-bold text-[12px] sm:text-[14px]">
-                          Super Hoodies
-                        </h2>
-                        <p className="text-[#858585] text-[12px] font-lato">
-                          14%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Profile Section */}
-              <div className="flex w-full lg:w-1/2 h-full px-8 py-6 text-black  bg-white justify-center align-middle shadow-xl border-1 border-slate-200 rounded-3xl">
-                {detailsExist === false ? (
-                  <div className="w-full flex-col flex justify-center align-middle h-full">
-                    <div className="flex flex-col justify-center align-middle w-20 h-20 bg-[#EBEBEB] rounded-full mx-auto">
-                      <img
-                        src={plus}
-                        alt="Open Profile Modal Button"
-                        onClick={openProfileModal}
-                        className="h-10 w-10 align-middle justify-center mx-auto hover:cursor-pointer"
-                      />
-                    </div>
-                    <h1 className="text-[#858585] font-bold mt-4 text-center ">
-                      Add profile
-                    </h1>
-                  </div>
-                ) : (
-                  <div className="flex flex-col p-8 w-full">
-                    <div className="text-left">
-                      <p className="font-semibold text-2xl truncate">{user.name}</p>
-                    </div>
-                    <div className="flex flex-row mt-8 gap-4">
-                      <div className="flex flex-col justify-between align-middle gap-12 w-1/2">
-                        <div className="flex align-middle justify-start h-fit gap-2">
-                          <img src={whatsapp} alt="whatsapp" />
-                          <p className="font-normal text-sm underline mt-[2px] truncate">
-                            {user.phone}
-                          </p>
-                        </div>
-                        <div className="flex align-middle justify-start h-fit gap-2">
-                          <img src={emailPic} alt="email" />
-                          <p className="font-normal text-sm underline mt-[2px] truncate">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-between align-middle gap-12 w-1/2">
-                        <div className="flex align-middle justify-start h-fit gap-2">
-                          <img src={instaPic} alt="insta" />
-                          <p className="font-normal text-sm underline mt-[2px] truncate">
-                            {user.insta}
-                          </p>
-                        </div>
-
-                        <div className="flex align-middle justify-start h-fit gap-2">
-                          <img src={yt} alt="youtube" />
-                          <p className="font-normal text-sm underline mt-[2px truncate">
-                            {user.youtube}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+  return (
+    <div className={`relative flex w-full h-screen ${isDarkMode ? "bg-[#1A1A1A] text-white" : "bg-[#F5F5F5] text-black"}`}>
+      <SideBar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      
+      <div className="flex-grow flex flex-col">
+        {/* Top Bar */}
+        <div className="flex justify-between items-center p-4">
+          <h1 className="font-bold text-[21px] sm:text-[24px]">
+            Upload CSV
+          </h1>
+          <div className="flex justify-between items-center gap-3">
+            
+            <Bell className="w-[18px] h-[20px]" />
+            <User className="w-[30px] h-[30px] rounded-full bg-gray-300" />
           </div>
         </div>
+        
+        {/* Main Content */}
+        <div className="flex-grow flex flex-col gap-4 lg:gap-6 px-10 py-32" style={{ marginLeft: isDarkMode ? '70px' : '70px', overflowY: 'auto', height: '100vh' }}>
+          <div className={`w-full p-4 ${getThemeClass('bg-white', 'bg-black')} rounded-lg shadow-md`}>
+            
+            <div className={`border-2 border-dashed rounded-lg px-24 py-12 mb-6 flex flex-col items-center justify-center ${getThemeClass('border-gray-200', 'border-gray-700')}`} style={{ minHeight: "200px" }}>
+              <svg className="w-12 h-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <p className={`mb-2 text-sm ${getThemeClass('text-gray-600', 'text-gray-300')}`}>
+                Drop your excel sheet here or{" "}
+                <label className="text-indigo-500 cursor-pointer hover:underline">
+                  browse
+                  <input type="file" className="hidden" onChange={handleFileUpload} accept=".csv" />
+                </label>
+              </p>
+              {file && <p className={`text-sm ${getThemeClass('text-gray-500', 'text-gray-400')}`}>{file.name}</p>}
+            </div>
+            <button
+              onClick={handleUpload}
+              disabled={!file || isLoading}
+              className={`w-full ${isLoading ? 'bg-indigo-400' : getThemeClass('bg-indigo-500 hover:bg-indigo-600', 'bg-indigo-600 hover:bg-indigo-700')} text-white px-4 py-3 rounded transition-colors flex items-center justify-center text-sm`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                  </svg>
+                  Upload
+                </>
+              )}
+            </button>
+            {isUploaded && (
+  <>
+    <h1 className={`text-xl font-semibold mb-4 mt-8 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>
+      Uploads
+    </h1>
+    <div className={`${getThemeClass('bg-white', 'bg-gray-800')} p-8 rounded-lg shadow-md w-full`}>
+      <table className="w-full">
+        <thead className={getThemeClass('bg-gray-50', 'bg-gray-700')}>
+          <tr>
+            <th className={`text-left py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>SI No.</th>
+            <th className={`text-left py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>Links</th>
+            <th className={`text-left py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>Prefix</th>
+            <th className={`text-left py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>Add Tags</th>
+                        <th className={`text-left py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>
+                          <div className="scrollable-tags">
+                            Selected Tags
+                          </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {csvData.map((row, index) => (
+            <tr key={index} className={`border-b ${getThemeClass('border-gray-200', 'border-gray-700')} ${getThemeClass('hover:bg-gray-50', 'hover:bg-gray-700')}`}>
+              <td className={`py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>{index + 1}</td>
+              <td className={`py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>
+                <a href={formatLink(row.links)} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                  {row.links}
+                </a>
+              </td>
+              <td className={`py-2 px-4 ${getThemeClass('text-gray-900', 'text-gray-200')}`}>{row.prefix}</td>
+              <td className="py-2 px-4">
+                <select 
+                  className={`border rounded px-2 py-1 ${getThemeClass('bg-white text-gray-900', 'bg-gray-700 text-gray-200')}`}
+                  onChange={(e) => handleTagSelect(index, e.target.value)}
+                  value=""
+                >
+                  <option value="">Select Tags</option>
+                  {row['select tags'].split(', ').map((tag, i) => (
+                    <option key={i} value={tag}>{tag}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="py-2 px-4">
+                <div className="max-w-full overflow-x-auto">
+                  <div className="inline-flex gap-1">
+                    {row.selectedTags.map((tag, i) => (
+                      <span key={i} className="bg-blue-800 text-white text-xs font-semibold px-1 py-0.5 rounded flex items-center whitespace-nowrap">
+                        {tag}
+                        <button onClick={() => handleTagRemove(index, tag)} className="ml-1">
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
 
-        <ProfileDetails
-          isPopupOpen={isPopupOpen}
-          setIsPopupOpen={setIsPopupOpen}
-          setUser={setUser}
-          setDetailsExist={setDetailsExist}
-          isBasicSelected={isBasicSelected}
-          setIsBasicSelected={setIsBasicSelected}
-        />
-      </>
-    );
-  }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Home;

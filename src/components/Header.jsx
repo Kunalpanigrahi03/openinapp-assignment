@@ -6,7 +6,7 @@ const Header = () => {
   return (
     <div className="flex justify-between items-center ">
       <h1 className="text-black font-bold text-[21px] sm:text-[24px]">
-        Dashboard
+        Upload CSV
       </h1>
       <div className="flex justify-between items-center gap-3">
         <input
